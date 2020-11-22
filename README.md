@@ -1,10 +1,11 @@
 # 3D Reconstruction Project
 
-main.py is the script that will be run to load the images.
+main.py is the script that will be run to load the images. <br/>
 It calls the functions that are responsible for processing
 located in createDepthMap.py and createMesh.py.
 
-createDepthMap.py contains the functions that will create the depth map from the images.
+createDepthMap.py contains the functions that will create the depth map from the images. <br/>
+<br/>
 createMesh.py contains the functions that will create the mesh from the depth map.
 
 

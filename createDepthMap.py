@@ -5,6 +5,9 @@ from PIL import Image
 import os
 from time import time
 
+def findCameraIntrinsic(images):
+	pass
+
 def detectSIFTFeatures(img1, img2):
 	sift = cv2.xfeatures2d.SIFT_create()
 	kp1, desc1 = sift.detectAndCompute(img1, None)
@@ -33,7 +36,13 @@ def matchFeatures(img1, img2, featureDetection="SIFT"): # sample code from tutor
 	return src_pts, dst_pts
 
 def estimateRelativePose(img1, img2):
-	pass
+	# This function estimates the relative pose of the camera in img1 wrt img2
+	pts1, pts2 = matchFeatures(img1, img2)
+	# Find the fundamental matrix F (options: 7pt, 8pt, LMEDS, RANSAC)
+	F = cv2.findFundamentalMat(pts1, pts2, cv2.FM_RANSAC)
+	# Obtain the camera intrinsic matrix K
+	# Find the essential matrix E
+
 
 
 if __name__ == "__main__":

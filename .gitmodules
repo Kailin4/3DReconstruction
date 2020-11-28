@@ -1,0 +1,4 @@
+[submodule "images/semper"]
+	path = images/semper
+	url = https://github.com/renrichard/semper.git
+	branch = master

@@ -50,42 +50,47 @@ def estimateRelativePose(img1, img2, idx1, idx2):
 	# print(K1.shape, K2.shape, F.shape)
 	# Find the essential matrix E
 	E = K2.T @ F @ K1
+	# Since K1 and K2 are the same
+	retval, R, t, mask = cv2.recoverPose(E, pts1, pts2, cameraMatrix=K1)
+	# print(R)
+	# print(t)
+	return R,t
 
-	# Get the singular value decomposition to find
-	# Rotation matrix R and translation vector t
-	U, Sigma, V = np.linalg.svd(E)
-	Sigma = np.diag(Sigma)
-
-	# Mathematical postprocessing
-	# Sigma is supposed to be of the form
-	# s 0 0 We can make the last entry zero
-	# 0 s 0 and take the average of values of s
-	# 0 0 0
-	# s = np.average(Sigma[0,0], Sigma[1,1])
-	# Sigma[0,0] = s; Sigma[1,1] = s
-	print(U)
-	print(Sigma)
-	print(V)
-
-	W = np.array([[0, -1, 0],
-	              [1,  0, 0],
-	              [0,  0, 1]])
-
-	Winv = W.T
-	Z = np.array([[ 0, 1, 0],
-	              [-1, 0, 0],
-	              [ 0, 0, 0]])
-
-	# Solve for the rotation matrix and translation vectors
-	# Note there are four solutions
-	T_cross = U @ W @ Sigma @ U.T
-
-	# Since Sigma may not work on real world data
-	T_cross_alt = U @ Z @ U.T
-
-	# There are 2 possible rotation matrices
-	R1 = U @ Winv @ V.T
-	R2 = U @ W @ V.T
+	# # Get the singular value decomposition to find
+	# # Rotation matrix R and translation vector t
+	# U, Sigma, V = np.linalg.svd(E)
+	# Sigma = np.diag(Sigma)
+	#
+	# # Mathematical postprocessing
+	# # Sigma is supposed to be of the form
+	# # s 0 0 We can make the last entry zero
+	# # 0 s 0 and take the average of values of s
+	# # 0 0 0
+	# # s = np.average(Sigma[0,0], Sigma[1,1])
+	# # Sigma[0,0] = s; Sigma[1,1] = s
+	# print(U)
+	# print(Sigma)
+	# print(V)
+	#
+	# W = np.array([[0, -1, 0],
+	#               [1,  0, 0],
+	#               [0,  0, 1]])
+	#
+	# Winv = W.T
+	# Z = np.array([[ 0, 1, 0],
+	#               [-1, 0, 0],
+	#               [ 0, 0, 0]])
+	#
+	# # Solve for the rotation matrix and translation vectors
+	# # Note there are four solutions
+	# T_cross = U @ W @ Sigma @ U.T
+	#
+	# # Since Sigma may not work on real world data
+	# T_cross_alt = U @ Z @ U.T
+	#
+	# # There are 2 possible rotation matrices
+	# R1 = U @ Winv @ V.T
+	# R2 = U @ W @ V.T
 
 
 

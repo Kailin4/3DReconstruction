@@ -95,7 +95,6 @@ def estimateRelativePose(img1, img2, idx1, idx2):
 
 
 
-
 if __name__ == "__main__":
 	from os import listdir
 	from os.path import isfile, join
@@ -121,5 +120,7 @@ if __name__ == "__main__":
 			for k in range(3):
 				matrixList[i][j,k] = np.float(row[k])
 	idx1, idx2 = 0, 1
-	estimateRelativePose(images[idx1], images[idx2], idx1, idx2) # estimate time 35.433154821395874
+	R, t = estimateRelativePose(images[idx1], images[idx2], idx1, idx2) # estimate time 35.433154821395874
+	print(R)
+	print(t)
 	# findCameraIntrinsic()

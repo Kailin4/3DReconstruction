@@ -95,6 +95,7 @@ def estimateRelativePose(img1, img2, idx1, idx2):
 
 
 
+
 if __name__ == "__main__":
 	from os import listdir
 	from os.path import isfile, join
@@ -124,3 +125,9 @@ if __name__ == "__main__":
 	print(R)
 	print(t)
 	# findCameraIntrinsic()
+	# listofMatches stores instances of Match (which map image # to location on image plane)
+	listOfMatches = []
+	# self.discovered is an list of dictionaries which indicate if a point
+	# has been added to the listOfMatches before.
+	# The key is a tuple for the coordinate, and the value is the reference of the match instance.
+	discovered = [dict() for i in range(len(images))]

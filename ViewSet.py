@@ -1,14 +1,7 @@
 from ViewSetConstants import *
+from Match import *
 import numpy as np
-
-class Match:
-	def __init__(self, viewId1, viewId2, pt1, pt2):
-		self.images = dict()
-		self.images[viewId1] = pt1
-		self.images[viewId2] = pt2
-	def addMatch(self, viewId, pt):
-		self.images[viewId] = pt
-
+import cv2
 
 class ViewSet:
 	def __init__(self, numViews):
@@ -16,13 +9,6 @@ class ViewSet:
 		self.numConnections = 0
 		self.views = [[] for i in range(VIEW_ATTRIBUTES)]
 		self.connections = [[] for i in range(CONNECTION_ATTRIBUTES)]
-		# listofMatches stores instances of Match (which map image # to location on image plane)
-		self.listOfMatches = []
-		# self.discovered is an list of dictionaries which indicate if a point
-		# has been added to the listOfMatches before.
-		# The key is a tuple for the coordinate, and the value is the reference of the match instance.
-		self.discovered = [dict() for i in range(numViews)]
-
 
 	def addView(self, viewId, relRot, relTrans, desc, kp):
 		self.views[VIEW_ID].append(viewId)
@@ -43,16 +29,23 @@ class ViewSet:
 		# In our algorithm we have a fundamental assumption, we add connections
 		# in the following order: 0-1, 1-2, ..., (n-2)-(n-1).
 		# That means there are n-1 stored connections for n images (zero-indexed).
-
 		if viewId == 0:
 			self.views[ABSOLUTE_ROTATION].append(np.eye(3))
 			self.views[ABSOLUTE_TRANSLATION].append(np.zeros((3,1)))
 			return
 
-		invRot = np.linalg.inv(relRot)
+		# Another note cv2.triangulatePoints projects from world coordinates to the image coordinates
+		# So ABSOLUTE ROTATION stores absolute to image
+		absR = relRot @ self.views[ABSOLUTE_ROTATION][viewId - 1]
 
-		absR = self.views[ABSOLUTE_ROTATION][viewId-1] @ invRot
-		absT = absR @ relTrans + self.views[ABSOLUTE_TRANSLATION][viewId-1]
+		# Keep in mind cv2 x2 = R(x1) + t
+		absT = relRot @ self.views[ABSOLUTE_TRANSLATION][viewId-1] + relTrans
+
+
+
+		# invRot = np.linalg.inv(relRot)
+		# absR = self.views[ABSOLUTE_ROTATION][viewId-1] @ invRot
+		# absT = absR @ relTrans + self.views[ABSOLUTE_TRANSLATION][viewId-1]
 
 		#
 		#
@@ -86,7 +79,7 @@ class ViewSet:
 		self.connections[ABSOLUTE_ROTATION].append(absR)
 		self.connections[ABSOLUTE_TRANSLATION].append(absT)
 
-	def findPointTracks(self):
+	def findPointTracks(self, listOfMatches, discovered):
 		# for every connection
 		for i in range(len(self.connections[VIEW_ID_1])):
 			# Get the view id of the points
@@ -103,28 +96,50 @@ class ViewSet:
 				# if pt1 is not discovered and pt2 is is discovered add to existing match
 				# if pt1 and pt2 are not discovered add both to the same match
 				# Note pt1 must be a tuple (can also convert to int)
-				if pt1 in self.discovered[viewId1] and pt2 not in self.discovered[viewId2]:
-					match = self.discovered[viewId1][pt1]
+				if pt1 in discovered[viewId1] and pt2 not in discovered[viewId2]:
+					match = discovered[viewId1][pt1]
 					match.addMatch(viewId2, pt2)
-					self.discovered[viewId2][pt2] = match
+					discovered[viewId2][pt2] = match
 
-				if pt1 not in self.discovered[viewId2] and pt2 in self.discovered[viewId1]:
-					match = self.discovered[viewId2][pt2]
+				if pt1 not in discovered[viewId2] and pt2 in discovered[viewId1]:
+					match = discovered[viewId2][pt2]
 					match.addMatch(viewId1, pt1)
-					self.discovered[viewId1][pt1] = match
+					discovered[viewId1][pt1] = match
 
-				if pt1 not in self.discovered[viewId1] and pt2 not in self.discovered[viewId2]:
+				if pt1 not in discovered[viewId1] and pt2 not in discovered[viewId2]:
 					match = Match(viewId1, viewId2, pt1, pt2)
-					self.discovered[viewId1][pt1] = match
-					self.discovered[viewId2][pt2] = match
-					self.listOfMatches.append(match)
+					match.addMatch(viewId1, pt1)
+					match.addMatch(viewId2, pt2)
+					discovered[viewId1][pt1] = match
+					discovered[viewId2][pt2] = match
+					listOfMatches.append(match)
+
+	def findProjections(self, match):
+		listOfViews = match.getViews()
+		for i in range(len(listOfViews)):
+			for j in range(i, len(listOfViews)):
+				viewId1 = listOfViews[i]
+				viewId2 = listOfViews[j]
+
+				pt1 = match[viewId1]
+				pt2 = match[viewId2]
+
+				rot1 = self.views[ABSOLUTE_ROTATION][viewId1]
+				rot2 = self.views[ABSOLUTE_ROTATION][viewId2]
+
+				trans1 = self.views[ABSOLUTE_TRANSLATION][viewId1]
+				trans2 = self.views[ABSOLUTE_TRANSLATION][viewId2]
+
+				# -1 due to the opencv implementation
+				proj1 = np.hstack((rot1,-1 * trans1))
+				proj2 = np.hstack((rot2,-1 * trans2))
+				projection = cv2.triangulatePoints(proj1, proj2, pt1, pt2)
+				match.addProjection(viewId1, viewId2, projection)
+				pass
 
 
 
 
 
 if __name__ == "__main__":
-	a = True
-	if a:
-		match = 5
-	print(match)
+	pass

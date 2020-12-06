@@ -114,31 +114,6 @@ class ViewSet:
 					discovered[viewId2][pt2] = match
 					listOfMatches.append(match)
 
-	def findProjections(self, match):
-		listOfViews = match.getViews()
-		for i in range(len(listOfViews)):
-			for j in range(i, len(listOfViews)):
-				viewId1 = listOfViews[i]
-				viewId2 = listOfViews[j]
-
-				pt1 = match[viewId1]
-				pt2 = match[viewId2]
-
-				rot1 = self.views[ABSOLUTE_ROTATION][viewId1]
-				rot2 = self.views[ABSOLUTE_ROTATION][viewId2]
-
-				trans1 = self.views[ABSOLUTE_TRANSLATION][viewId1]
-				trans2 = self.views[ABSOLUTE_TRANSLATION][viewId2]
-
-				# -1 due to the opencv implementation
-				proj1 = np.hstack((rot1,-1 * trans1))
-				proj2 = np.hstack((rot2,-1 * trans2))
-				projection = cv2.triangulatePoints(proj1, proj2, pt1, pt2)
-				match.addProjection(viewId1, viewId2, projection)
-				pass
-
-
-
 
 
 if __name__ == "__main__":

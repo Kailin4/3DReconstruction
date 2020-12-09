@@ -1,28 +1,19 @@
 from ViewSetConstants import *
 from Match import *
-import numpy as np
-import cv2
 
 class ViewSet:
-	def __init__(self, numViews):
-		self.numViews = numViews
+	def __init__(self):
+		self.numViews = 0
 		self.numConnections = 0
 		self.views = [[] for i in range(VIEW_ATTRIBUTES)]
 		self.connections = [[] for i in range(CONNECTION_ATTRIBUTES)]
 
 	def addView(self, viewId, relRot, relTrans, desc, kp):
+		self.numViews += 1
 		self.views[VIEW_ID].append(viewId)
 		self.views[DESCRIPTORS].append(desc)
 		self.views[KEYPOINTS].append(kp)
 		self.addAbsolutePose(viewId, relRot, relTrans)
-
-	def addConnection(self, viewId1, viewId2, relRot, relTrans, srcPts, dstPts):
-		self.connections[VIEW_ID_1].append(viewId1)
-		self.connections[VIEW_ID_2].append(viewId2)
-		self.connections[RELATIVE_ROTATION].append(relRot)
-		self.connections[RELATIVE_TRANSLATION].append(relTrans)
-		self.connections[SOURCE_POINTS].append(srcPts)
-		self.connections[DESTINATION_POINTS].append(dstPts)
 
 	def addAbsolutePose(self, viewId, relRot, relTrans):
 		# Note about opencv2 translation is cam2 to cam1 in cam2 frame.
@@ -37,47 +28,19 @@ class ViewSet:
 		# Another note cv2.triangulatePoints projects from world coordinates to the image coordinates
 		# So ABSOLUTE ROTATION stores absolute to image
 		absR = relRot @ self.views[ABSOLUTE_ROTATION][viewId - 1]
-
 		# Keep in mind cv2 x2 = R(x1) + t
 		absT = relRot @ self.views[ABSOLUTE_TRANSLATION][viewId-1] + relTrans
 
+		self.views[ABSOLUTE_ROTATION].append(absR)
+		self.views[ABSOLUTE_TRANSLATION].append(absT)
 
-
-		# invRot = np.linalg.inv(relRot)
-		# absR = self.views[ABSOLUTE_ROTATION][viewId-1] @ invRot
-		# absT = absR @ relTrans + self.views[ABSOLUTE_TRANSLATION][viewId-1]
-
-		#
-		#
-		# # Rotation from cam2 to cam1
-		# R1ToAbsolute = np.eye(3)
-		# t1ToAbsolute =
-		#
-		#
-		# # Rotation from cam2 to cam1 (now in cam1 frame), added in addConnection
-		# R2To1 = np.linalg.inv(self.connections[RELATIVE_ROTATION][-1])
-		# # Translation from cam2 to cam1 (now in cam1 frame), added in addConnection
-		# t2To1 = self.connections[RELATIVE_TRANSLATION][-1]
-		#
-		#
-		#
-		#
-		#
-		# for i in range(viewId1-1, -1, -1):
-		# 	# Rotation from cam2 to cam1 (now in cam1 frame)
-		# 	R2To1 = np.linalg.inv(self.connections[RELATIVE_ROTATION][i])
-		# 	# Translation from cam2 to cam1 (now in cam1 frame)
-		# 	t2To1 = self.connections[RELATIVE_TRANSLATION][i]
-		# 	# Rotation from cam1 to absolute
-		# 	R1ToAbsolute = R1ToAbsolute @ R2To1
-		# 	t1ToAbsolute = R2To1 @ (t1ToAbsolute + t2To1)
-		# # Translation from cam1 to absolute in (absolute frame)
-		# t1ToAbsolute = R1ToAbsolute @ self.connections[RELATIVE_TRANSLATION][viewId1-1]
-		# absoluteRotation = R2To1 @ R1ToAbsolute
-		# absoluteTranslation = R1ToAbsolute @ t2To1 + t1ToAbsolute
-
-		self.connections[ABSOLUTE_ROTATION].append(absR)
-		self.connections[ABSOLUTE_TRANSLATION].append(absT)
+	def addConnection(self, viewId1, viewId2, relRot, relTrans, srcPts, dstPts):
+		self.connections[VIEW_ID_1].append(viewId1)
+		self.connections[VIEW_ID_2].append(viewId2)
+		self.connections[RELATIVE_ROTATION].append(relRot)
+		self.connections[RELATIVE_TRANSLATION].append(relTrans)
+		self.connections[SOURCE_POINTS].append(srcPts)
+		self.connections[DESTINATION_POINTS].append(dstPts)
 
 	def findPointTracks(self, listOfMatches, discovered):
 		# for every connection
@@ -114,7 +77,8 @@ class ViewSet:
 					discovered[viewId2][pt2] = match
 					listOfMatches.append(match)
 
+	def debugViews(self):
+		print("numViews: ", self.numViews)
+		for key, val in viewAttributesDict.items():
+			print(key, self.views[val])
 
-
-if __name__ == "__main__":
-	pass

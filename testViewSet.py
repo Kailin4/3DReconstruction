@@ -13,6 +13,14 @@ def testAddMultipleViews(images, rotation, translation):
 		v.addView(i, rotation[i], translation[i], None, None)
 	v.debugViews()
 
+def testAddOneConnection(R01, t01):
+	v = ViewSet()
+	v.addConnection(0,1, R01, t01, None, None)
+	v.debugConnections()
+
+
+
+
 if __name__ == "__main__":
 	# testAddOneView()
 
@@ -24,4 +32,5 @@ if __name__ == "__main__":
 	t01 = np.zeros((3,1))
 	rotation = [None, R01]
 	translation = [None, t01]
-	testAddMultipleViews(images, rotation, translation)
+	# testAddMultipleViews(images, rotation, translation)
+	testAddOneConnection(R01, t01)

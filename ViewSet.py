@@ -82,3 +82,6 @@ class ViewSet:
 		for key, val in viewAttributesDict.items():
 			print(key, self.views[val])
 
+	def debugConnections(self):
+		for key, val in connectionAttributesDict.items():
+			print(key, self.connections[val])

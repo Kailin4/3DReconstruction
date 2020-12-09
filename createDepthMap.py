@@ -39,6 +39,20 @@ def estimateRelativePose(img1, img2, idx1, idx2):
 	# This function estimates the relative pose of the camera in img1 wrt img2
 	# pts1, pts2 = matchFeatures(img1, img2) # match time 35.29676103591919
 	pts1, pts2 = np.load(outputDir + 'pts1.npy'), np.load(outputDir + 'pts2.npy')
+	pts1, pts2 = np.load(outputDir + 'pts1.npy'), np.load(outputDir + 'pts2.npy')
+	# Find the fundamental matrix F (options: 7pt, 8pt, LMEDS, RANSAC)
+	F = cv2.findFundamentalMat(pts1, pts2, cv2.FM_8POINT)[0]
+	# Obtain the camera intrinsic matrix K
+
+	# Normal Scenario
+	# 1. Run through the camera calibration pipeline
+	# 2. Call findCameraIntrinsic to retrieve camera matrix
+	K1, K2 = findCameraIntrinsic(idx1, idx2)
+	# print(K1.shape, K2.shape, F.shape)
+	# Find the essential matrix E
+	E = K2.T @ F @ K1
+	# Since K1 and K2 are the same
+	retval, R, t, mask = cv2.recoverPose(E, pts1, pts2, cameraMatrix=K1)
 	# Find the fundamental matrix F (options: 7pt, 8pt, LMEDS, RANSAC)
 	F = cv2.findFundamentalMat(pts1, pts2, cv2.FM_8POINT)[0]
 	# Obtain the camera intrinsic matrix K

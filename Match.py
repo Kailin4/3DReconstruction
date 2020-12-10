@@ -10,16 +10,25 @@ class Match:
 		self.projections = dict()
 		# tuple (2 view ids):
 		self.bestProjection = None
+
+	def debugViews(self): print(self.views)
+
+	def debugProjections(self): print(self.projections)
+
+	def debugBestProjection(self): print(self.bestProjection)
+
 	def addMatch(self, viewId, pt):
 		self.views[viewId] = pt
+
 	def getViews(self):
 		return self.views.keys()
+
 	def getProjections(self):
 		return self.projections.values()
+
 	def addProjection(self, viewId1, viewId2, projection):
 		self.projections[(viewId1, viewId2)] = projection
-	# def addProjection(self, proj):
-	# 	self.projection = proj
+
 	def findProjections(self, viewSet):
 		listOfViews = self.getViews()
 		for i in range(len(listOfViews)):

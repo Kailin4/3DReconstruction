@@ -48,8 +48,12 @@ class Match:
 				# -1 due to the opencv implementation
 				proj1 = np.hstack((rot1,-1 * trans1))
 				proj2 = np.hstack((rot2,-1 * trans2))
-				projection = cv2.triangulatePoints(proj1, proj2, pt1, pt2)
+				projection = self.lounetHiggins()
+				# projection = cv2.triangulatePoints(proj1, proj2, pt1, pt2)
 				self.addProjection(viewId1, viewId2, projection)
+
+	def lounetHiggins(self):
+		return None
 
 	def findOptimalProjection(self, viewSet):
 		listOfViews = self.getViews()

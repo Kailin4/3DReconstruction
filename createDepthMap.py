@@ -9,17 +9,28 @@ def findCameraIntrinsic(idx1, idx2):
 	# This function finds the intrinsic matrices for all the images
 	return matrixList[idx1], matrixList[idx2]
 
-def detectSIFTFeatures(img1, img2):
-	sift = cv2.xfeatures2d.SIFT_create()
-	kp1, desc1 = sift.detectAndCompute(img1, None)
-	kp2, desc2 = sift.detectAndCompute(img2, None)
+def detectFeatures(img1, img2, featureDetection):
+	if featureDetection == "SIFT":
+		detector = cv2.xfeatures2d.SIFT_create()
+	elif featureDetection == "SURF":
+		detector = cv2.xfeatures2d.SIFT_create()
+	elif featureDetection == "ORB":
+		detector = cv2.ORB_create(nfeatures=1000)
+	
+	kp1, desc1 = detector.detectAndCompute(img1, None)
+	kp2, desc2 = detector.detectAndCompute(img2, None)
 	return kp1, desc1, kp2, desc2
 
 def matchFeatures(img1, img2, featureDetection="SIFT"): # sample code from tutorial
 	# This function uses the code from the tutorial to find a list of matching features
 	# between two images and returns them as two corresponding lists.
+	start = time()
 	if featureDetection == "SIFT":
-		kp1, desc1, kp2, desc2 = detectSIFTFeatures(img1, img2)
+		kp1, desc1, kp2, desc2 = detectFeatures(img1, img2, featureDetection)
+	elif featureDetection == "SURF":
+		kp1, desc1, kp2, desc2 = detectFeatures(img1, img2, featureDetection)
+	elif featureDetection == "ORB":
+		kp1, desc1, kp2, desc2 = detectFeatures(img1, img2, featureDetection)
 
 	bf = cv2.BFMatcher()
 	matches = bf.knnMatch(desc1, desc2, k=2)  # k=2 means find the top two matchs for each query descriptor
@@ -33,12 +44,32 @@ def matchFeatures(img1, img2, featureDetection="SIFT"): # sample code from tutor
 			good_matches_without_list.append(m)
 	src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches_without_list]) #.reshape(-1, 2)
 	dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches_without_list]) #.reshape(-1, 1, 2)
+	# plotFeatures(img1, kp1, img2, kp2, good_matches)
+	finish = time()
+	print(finish - start)
 	return src_pts, dst_pts
+
+def drawKeypoints(img1, kp1, img2, kp2):
+	img1_kp = cv2.drawKeypoints(img1, kp1, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
+	                              color=(255, 255, 0))
+	img2_kp = cv2.drawKeypoints(img2, kp2, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
+	                              color=(255, 255, 0))
+	plt.subplot(1, 2, 1)
+	plt.imshow(img1_kp)
+	plt.subplot(1, 2, 2)
+	plt.imshow(img2_kp)
+	plt.show()
+
+def plotFeatures(img1, kp1, img2, kp2, good_matches):
+	img3 = cv2.drawMatchesKnn(img1, kp1, img2, kp2, good_matches,
+	                          None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+	                          matchColor=(0, 255, 0))
+	plt.imshow(img3), plt.show()
 
 def estimateRelativePose(img1, img2, idx1, idx2):
 	# This function estimates the relative pose of the camera in img1 wrt img2
 	# pts1, pts2 = matchFeatures(img1, img2) # match time 35.29676103591919
-	pts1, pts2 = np.load(outputDir + 'pts1.npy'), np.load(outputDir + 'pts2.npy')
+	# pts1, pts2 = np.load(outputDir + 'pts1.npy'), np.load(outputDir + 'pts2.npy')
 	pts1, pts2 = np.load(outputDir + 'pts1.npy'), np.load(outputDir + 'pts2.npy')
 	# Find the fundamental matrix F (options: 7pt, 8pt, LMEDS, RANSAC)
 	F = cv2.findFundamentalMat(pts1, pts2, cv2.FM_8POINT)[0]
@@ -70,46 +101,6 @@ def estimateRelativePose(img1, img2, idx1, idx2):
 	# print(t)
 	return R,t
 
-	# # Get the singular value decomposition to find
-	# # Rotation matrix R and translation vector t
-	# U, Sigma, V = np.linalg.svd(E)
-	# Sigma = np.diag(Sigma)
-	#
-	# # Mathematical postprocessing
-	# # Sigma is supposed to be of the form
-	# # s 0 0 We can make the last entry zero
-	# # 0 s 0 and take the average of values of s
-	# # 0 0 0
-	# # s = np.average(Sigma[0,0], Sigma[1,1])
-	# # Sigma[0,0] = s; Sigma[1,1] = s
-	# print(U)
-	# print(Sigma)
-	# print(V)
-	#
-	# W = np.array([[0, -1, 0],
-	#               [1,  0, 0],
-	#               [0,  0, 1]])
-	#
-	# Winv = W.T
-	# Z = np.array([[ 0, 1, 0],
-	#               [-1, 0, 0],
-	#               [ 0, 0, 0]])
-	#
-	# # Solve for the rotation matrix and translation vectors
-	# # Note there are four solutions
-	# T_cross = U @ W @ Sigma @ U.T
-	#
-	# # Since Sigma may not work on real world data
-	# T_cross_alt = U @ Z @ U.T
-	#
-	# # There are 2 possible rotation matrices
-	# R1 = U @ Winv @ V.T
-	# R2 = U @ W @ V.T
-
-
-
-
-
 if __name__ == "__main__":
 	from os import listdir
 	from os.path import isfile, join
@@ -135,6 +126,9 @@ if __name__ == "__main__":
 			for k in range(3):
 				matrixList[i][j,k] = np.float(row[k])
 	idx1, idx2 = 0, 1
+
+	matchFeatures(images[0], images[1], "SIFT")
+	'''
 	R, t = estimateRelativePose(images[idx1], images[idx2], idx1, idx2) # estimate time 35.433154821395874
 	print(R)
 	print(t)
@@ -145,3 +139,4 @@ if __name__ == "__main__":
 	# has been added to the listOfMatches before.
 	# The key is a tuple for the coordinate, and the value is the reference of the match instance.
 	discovered = [dict() for i in range(len(images))]
+	'''

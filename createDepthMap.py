@@ -73,8 +73,25 @@ def estimateRelativePose(img1, img2, idx1, idx2):
 	pts1, pts2 = np.load(outputDir + 'pts1.npy'), np.load(outputDir + 'pts2.npy')
 	# Find the fundamental matrix F (options: 7pt, 8pt, LMEDS, RANSAC)
 	F = cv2.findFundamentalMat(pts1, pts2, cv2.FM_8POINT)[0]
-	# Obtain the camera intrinsic matrix K
 
+	'''
+	# Code to test the fundamental matrix 
+	p1, p2 = np.ones(3), np.ones(3)
+	maxErr = 0
+	randIndex = np.random.randint(0,len(pts1))
+	# print(pts1[1], pts2[1])
+	p1[0:2] = pts1[randIndex][0:2]
+	p2[0:2] = pts2[randIndex][0:2]
+	print(p1 @ F @ p2.reshape(3,1))
+	# for i in range(len(pts1)):
+	# 	p1[0:2] = pts1[i][0:2]
+	# 	p2[0:2] = pts2[i][0:2]
+	# 	maxErr = max(maxErr, abs(p1 @ F @ p2.reshape(3,1)))
+	# print(maxErr)
+	# return
+	'''
+
+	# Obtain the camera intrinsic matrix K
 	# Normal Scenario
 	# 1. Run through the camera calibration pipeline
 	# 2. Call findCameraIntrinsic to retrieve camera matrix
@@ -113,18 +130,6 @@ if __name__ == "__main__":
 			for k in range(3):
 				matrixList[i][j,k] = np.float(row[k])
 	idx1, idx2 = 0, 1
-
-	src, dst = matchFeatures(images[0], images[1], "SIFT")
-	print(src.shape, dst.shape)
-	'''
 	R, t = estimateRelativePose(images[idx1], images[idx2], idx1, idx2) # estimate time 35.433154821395874
-	print(R)
-	print(t)
-	# findCameraIntrinsic()
-	# listofMatches stores instances of Match (which map image # to location on image plane)
-	listOfMatches = []
-	# self.discovered is an list of dictionaries which indicate if a point
-	# has been added to the listOfMatches before.
-	# The key is a tuple for the coordinate, and the value is the reference of the match instance.
-	discovered = [dict() for i in range(len(images))]
-	'''
+	# print(R)
+	# print(t)

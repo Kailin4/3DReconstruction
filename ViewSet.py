@@ -27,7 +27,7 @@ class ViewSet:
 
 		# Another note cv2.triangulatePoints projects from world coordinates to the image coordinates
 		# So ABSOLUTE ROTATION stores absolute to image
-		absR = relRot @ self.views[ABSOLUTE_ROTATION][viewId - 1]
+		absR = relRot @ self.views[ABSOLUTE_ROTATION][viewId-1]
 		# Keep in mind cv2 x2 = R(x1) + t
 		absT = relRot @ self.views[ABSOLUTE_TRANSLATION][viewId-1] + relTrans
 
@@ -50,8 +50,8 @@ class ViewSet:
 			viewId2 = self.connections[VIEW_ID_2][i]
 			for j in range(len(self.connections[SOURCE_POINTS][i])):
 				# Get the coordinates of the point
-				pt1 = self.connections[SOURCE_POINTS][i][j] # maybe convert to int tuple here
-				pt2 = self.connections[DESTINATION_POINTS][i][j] # maybe convert to int tuple
+				pt1 = tuple(self.connections[SOURCE_POINTS][i][j].astype('int16')) # maybe convert to int tuple here
+				pt2 = tuple(self.connections[DESTINATION_POINTS][i][j].astype('int64')) # maybe convert to int tuple
 				# check if the point is in discovered
 				# consider the cases:
 				# if pt1 and pt2 are discovered do nothing
@@ -64,13 +64,13 @@ class ViewSet:
 					match.addMatch(viewId2, pt2)
 					discovered[viewId2][pt2] = match
 
-				if pt1 not in discovered[viewId2] and pt2 in discovered[viewId1]:
+				if pt1 not in discovered[viewId1] and pt2 in discovered[viewId2]:
 					match = discovered[viewId2][pt2]
 					match.addMatch(viewId1, pt1)
 					discovered[viewId1][pt1] = match
 
 				if pt1 not in discovered[viewId1] and pt2 not in discovered[viewId2]:
-					match = Match(viewId1, viewId2, pt1, pt2)
+					match = Match()
 					match.addMatch(viewId1, pt1)
 					match.addMatch(viewId2, pt2)
 					discovered[viewId1][pt1] = match
@@ -84,4 +84,12 @@ class ViewSet:
 
 	def debugConnections(self):
 		for key, val in connectionAttributesDict.items():
-			print(key, self.connections[val])
+			print(key)
+			try:
+				iterator = iter(self.connections[val])
+			except TypeError:
+			# not iterable
+				print(self.connections[val])
+			else:
+				for item in self.connections[val]:
+					print(item)

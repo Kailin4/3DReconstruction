@@ -84,19 +84,6 @@ def estimateRelativePose(img1, img2, idx1, idx2):
 	E = K2.T @ F @ K1
 	# Since K1 and K2 are the same
 	retval, R, t, mask = cv2.recoverPose(E, pts1, pts2, cameraMatrix=K1)
-	# Find the fundamental matrix F (options: 7pt, 8pt, LMEDS, RANSAC)
-	F = cv2.findFundamentalMat(pts1, pts2, cv2.FM_8POINT)[0]
-	# Obtain the camera intrinsic matrix K
-
-	# Normal Scenario
-	# 1. Run through the camera calibration pipeline
-	# 2. Call findCameraIntrinsic to retrieve camera matrix
-	K1, K2 = findCameraIntrinsic(idx1, idx2)
-	# print(K1.shape, K2.shape, F.shape)
-	# Find the essential matrix E
-	E = K2.T @ F @ K1
-	# Since K1 and K2 are the same
-	retval, R, t, mask = cv2.recoverPose(E, pts1, pts2, cameraMatrix=K1)
 	# print(R)
 	# print(t)
 	return R,t
@@ -127,7 +114,8 @@ if __name__ == "__main__":
 				matrixList[i][j,k] = np.float(row[k])
 	idx1, idx2 = 0, 1
 
-	matchFeatures(images[0], images[1], "SIFT")
+	src, dst = matchFeatures(images[0], images[1], "SIFT")
+	print(src.shape, dst.shape)
 	'''
 	R, t = estimateRelativePose(images[idx1], images[idx2], idx1, idx2) # estimate time 35.433154821395874
 	print(R)

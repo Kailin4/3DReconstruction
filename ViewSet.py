@@ -8,11 +8,11 @@ class ViewSet:
 		self.views = [[] for i in range(VIEW_ATTRIBUTES)]
 		self.connections = [[] for i in range(CONNECTION_ATTRIBUTES)]
 
-	def addView(self, viewId, relRot, relTrans, desc, kp):
+	def addView(self, viewId, relRot, relTrans):# desc, kp):
 		self.numViews += 1
 		self.views[VIEW_ID].append(viewId)
-		self.views[DESCRIPTORS].append(desc)
-		self.views[KEYPOINTS].append(kp)
+		# self.views[DESCRIPTORS].append(desc)
+		# self.views[KEYPOINTS].append(kp)
 		self.addAbsolutePose(viewId, relRot, relTrans)
 
 	def addAbsolutePose(self, viewId, relRot, relTrans):

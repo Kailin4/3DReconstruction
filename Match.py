@@ -10,7 +10,7 @@ class Match:
 		self.projections = dict()
 		# tuple (2 view ids):
 		self.bestProjection = None
-		self.e = 1e-6
+		self.e = [1e-6]
 
 	def debugViews(self): print(self.views)
 
@@ -31,65 +31,62 @@ class Match:
 		self.projections[(viewId1, viewId2)] = projection
 
 	def findProjections(self, viewSet):
-		listOfViews = self.getViews()
+		listOfViews = sorted(list(self.getViews()))
 		for i in range(len(listOfViews)):
-			for j in range(i, len(listOfViews)):
+			for j in range(i+1, len(listOfViews)):
 				viewId1 = listOfViews[i]
 				viewId2 = listOfViews[j]
 
 				pt1 = self.views[viewId1]
 				pt2 = self.views[viewId2]
 
-				# rot1 = viewSet.views[ABSOLUTE_ROTATION][viewId1]
-				# rot2 = viewSet.views[ABSOLUTE_ROTATION][viewId2]
-				#
-				# trans1 = viewSet.views[ABSOLUTE_TRANSLATION][viewId1]
-				# trans2 = viewSet.views[ABSOLUTE_TRANSLATION][viewId2]
-				#
-				# # -1 due to the opencv implementation
-				# proj1 = np.hstack((rot1,-1 * trans1))
-				# proj2 = np.hstack((rot2,-1 * trans2))
-				projection = self.lounetHiggins(viewSet, viewId1, viewId2, pt1, pt2)
+				self.longuetHiggins(viewSet, viewId1, viewId2, pt1, pt2)
 				# projection = cv2.triangulatePoints(proj1, proj2, pt1, pt2)
-				self.addProjection(viewSet, viewId1, viewId2, projection)
 
-	def longuetHiggins(self, viewSet, viewId1, viewId2, y, y_prime):
+	def longuetHiggins(self, viewSet, viewId1, viewId2, pt1, pt2):
+		# y and y' is (2, tuple)
+		y = np.ones(3)
+		y[0:2] = pt1
+		y_prime = np.ones(3)
+		y_prime[0:2] = pt2
 		relRot, relTrans = viewSet.getRelativeTransforms(viewId1, viewId2)
 		r1, r2, r3 = relRot[0], relRot[1], relRot[2]
 		fac = (r1 - y_prime[0] * r3)
 		# Slight modification to avoid division by zero
-		z1 = (fac @ relTrans) / ((fac @ y) + self.e)
+		z1 = ((fac @ relTrans) / ((fac @ np.array(y).reshape(3,1)) + self.e))[0]
 		fac = (r2 - y_prime[1] * r3)
-		z2 = (fac @ relTrans) / ((fac @ y) + self.e)
+		z2 = ((fac @ relTrans) / ((fac @ np.array(y).reshape(3,1)) + self.e))[0]
 		# Take the average of the two estimates
-		z = np.avg(z1, z2)[0]
-		proj1 = np.zeros(3)
+		z = (z1 + z2) / 2
+		projection = np.ones(3)
+		projection[0:2] = pt1
+		projection *= z
+		projection = projection.reshape(3,1)# / np.linalg.norm(projection)
+		# 3D coordinates in the first viewId1 space
+		self.addProjection(viewId1, viewId2, projection)
 
-
-		return None
-
-	def findOptimalProjection(self, viewSet):
-		listOfViews = self.getViews()
-		listOfProjections = self.getProjections()
+	def findBestProjection(self, viewSet):
+		listOfViews = sorted(list(self.getViews()))
 		# reproject the projection on each of the views
-		smallestError = np.inf
-		bestProj = None
-		for projection in listOfProjections:
+		minError = np.inf
+		for views, pt in self.projections.items():
 			error = 0
-			for viewId in listOfViews:
-				pt = self.views[viewId]
-				rot = viewSet.views[ABSOLUTE_ROTATION][viewId]
-				trans = viewSet.views[ABSOLUTE_TRANSLATION][viewId]
-				proj = np.hstack((rot, -1 * trans))
-				reproj = proj @ projection
-				# make 2d point
-				reproj = reproj / reproj[2,0]
-				reproj = reproj[0:2]
-				reproj = reproj.reshape(2)
-				error += np.linalg.norm(reproj - pt)
-			if error < smallestError:
-				bestProj = projection
+			viewId1 = views[0]
+			for viewIdTarget in listOfViews:
+				if viewId1 != viewIdTarget:
+					targetPt = self.views[viewIdTarget]
+					relRot, relTrans = viewSet.getRelativeTransforms(viewId1, viewIdTarget)
+					reproj = (viewSet.intrinsics @ (relRot @ pt + relTrans)).reshape(3)[0:2]
+					error += np.linalg.norm(reproj - targetPt)
+			if error < minError:
+				# convert to world space
+				if viewId1 != 0:
+					relRot, relTrans = viewSet.getRelativeTransforms(0, viewId1)
+					bestProj = np.linalg.inv(relRot) @ (pt - relTrans)
+				else: bestProj = pt
+				# bestProj /= np.linalg.norm(bestProj)
 		self.bestProjection = bestProj
+
 
 
 

@@ -5,34 +5,38 @@ class ViewSet:
 	def __init__(self):
 		self.numViews = 0
 		self.numConnections = 0
-		self.views = [[] for i in range(VIEW_ATTRIBUTES)]
+		# self.views = [[] for i in range(VIEW_ATTRIBUTES)]
 		self.connections = [[] for i in range(CONNECTION_ATTRIBUTES)]
+		self.intrinsics = None
 
-	def addView(self, viewId, relRot, relTrans):# desc, kp):
-		self.numViews += 1
-		self.views[VIEW_ID].append(viewId)
-		# self.views[DESCRIPTORS].append(desc)
-		# self.views[KEYPOINTS].append(kp)
-		self.addAbsolutePose(viewId, relRot, relTrans)
+	def setIntrinsics(self, intrinsics):
+		self.intrinsics = intrinsics
 
-	def addAbsolutePose(self, viewId, relRot, relTrans):
-		# Note about opencv2 translation is cam2 to cam1 in cam2 frame.
-		# In our algorithm we have a fundamental assumption, we add connections
-		# in the following order: 0-1, 1-2, ..., (n-2)-(n-1).
-		# That means there are n-1 stored connections for n images (zero-indexed).
-		if viewId == 0:
-			self.views[ABSOLUTE_ROTATION].append(np.eye(3))
-			self.views[ABSOLUTE_TRANSLATION].append(np.zeros((3,1)))
-			return
-
-		# Another note cv2.triangulatePoints projects from world coordinates to the image coordinates
-		# So ABSOLUTE ROTATION stores absolute to image
-		absR = self.views[ABSOLUTE_ROTATION][viewId-1] @ relRot
-		# Keep in mind cv2 x2 = R(x1) + t
-		absT = absR @ relTrans + self.views[ABSOLUTE_TRANSLATION][viewId-1]
-		# later have to multiply by -1
-		self.views[ABSOLUTE_ROTATION].append(absR)
-		self.views[ABSOLUTE_TRANSLATION].append(absT)
+	# def addView(self, viewId, relRot, relTrans):# desc, kp):
+	# 	self.numViews += 1
+	# 	self.views[VIEW_ID].append(viewId)
+	# 	# self.views[DESCRIPTORS].append(desc)
+	# 	# self.views[KEYPOINTS].append(kp)
+	# 	self.addAbsolutePose(viewId, relRot, relTrans)
+	#
+	# def addAbsolutePose(self, viewId, relRot, relTrans):
+	# 	# Note about opencv2 translation is cam2 to cam1 in cam2 frame.
+	# 	# In our algorithm we have a fundamental assumption, we add connections
+	# 	# in the following order: 0-1, 1-2, ..., (n-2)-(n-1).
+	# 	# That means there are n-1 stored connections for n images (zero-indexed).
+	# 	if viewId == 0:
+	# 		self.views[ABSOLUTE_ROTATION].append(np.eye(3))
+	# 		self.views[ABSOLUTE_TRANSLATION].append(np.zeros((3,1)))
+	# 		return
+	#
+	# 	# Another note cv2.triangulatePoints projects from world coordinates to the image coordinates
+	# 	# So ABSOLUTE ROTATION stores absolute to image
+	# 	absR = self.views[ABSOLUTE_ROTATION][viewId-1] @ relRot
+	# 	# Keep in mind cv2 x2 = R(x1) + t
+	# 	absT = absR @ relTrans + self.views[ABSOLUTE_TRANSLATION][viewId-1]
+	# 	# later have to multiply by -1
+	# 	self.views[ABSOLUTE_ROTATION].append(absR)
+	# 	self.views[ABSOLUTE_TRANSLATION].append(absT)
 
 	def addConnection(self, viewId1, viewId2, relRot, relTrans, srcPts, dstPts):
 		self.connections[VIEW_ID_1].append(viewId1)
@@ -83,10 +87,10 @@ class ViewSet:
 					discovered[viewId2][pt2] = match
 					listOfMatches.append(match)
 
-	def debugViews(self):
-		print("numViews: ", self.numViews)
-		for key, val in viewAttributesDict.items():
-			print(key, self.views[val])
+	# def debugViews(self):
+	# 	print("numViews: ", self.numViews)
+	# 	for key, val in viewAttributesDict.items():
+	# 		print(key, self.views[val])
 
 	def debugConnections(self):
 		for key, val in connectionAttributesDict.items():

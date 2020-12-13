@@ -1,10 +1,10 @@
 from os import listdir
 from os.path import isfile, join
-from createDepthMap import *
 from ViewSet import *
+from createDepthMap import *
+from time import time
 
-
-
+start = time()
 # set the images directory for semper dataset
 imgDir = "images/semper/"
 outputDir = "output/temp/"
@@ -17,6 +17,7 @@ cameraFiles = [imgDir + f for f in files if "camera" in f]
 imgFiles = [imgDir + f for f in files if "ppm" in f and "camera" not in f and "3D" not in f]
 # convert ppm to numpy array
 images = [cv2.imread(f, cv2.IMREAD_GRAYSCALE) for f in imgFiles]
+numImages = len(images)
 # load the camera matrices
 matrixFiles = [open(f) for f in cameraFiles]
 matrixList = [np.zeros((3, 3)) for f in cameraFiles]
@@ -25,7 +26,34 @@ for i in range(len(matrixFiles)):
 		row = matrixFiles[i].readline().split()
 		for k in range(3):
 			matrixList[i][j, k] = np.float(row[k])
-idx1, idx2 = 0, 1
-R, t = estimateRelativePose(images[idx1], images[idx2], idx1, idx2)  # estimate time 35.433154821395874
-# print(R)
-# print(t)
+
+# instantiate viewSet object
+v = ViewSet()
+
+# set instrinsics
+v.setIntrinsics(matrixList[0])
+
+for i in range(numImages):
+	for j in range(i+1, numImages):
+		R, t, srcPts, dstPts = estimateRelativePose(images[i], images[j],
+		                                            i, j, v.intrinsics)  # estimate time 35.433154821395874
+		v.addConnection(i, j, R, t, srcPts, dstPts)
+
+# find the matches
+listOfMatches = []
+discovered = [dict() for i in range(numImages)]
+v.findPointTracks(listOfMatches, discovered)
+# find the projections
+index = np.random.randint(0, len(listOfMatches))
+pointCloud = np.zeros((len(listOfMatches), 6))
+for m in range(len(listOfMatches)):
+	listOfMatches[m].findProjections(v)
+	listOfMatches[m].findBestProjection(v)
+	pointCloud[m][0:3] = listOfMatches[m].bestProjection.reshape(3)
+	pointCloud[m][3:] = np.array([255., 0., 0.])
+finish = time()
+print(finish - start)
+plot_pointCloud(pointCloud)
+
+
+

@@ -4,10 +4,7 @@ import cv2
 from PIL import Image
 import os
 from time import time
-
-def findCameraIntrinsic(idx1, idx2):
-	# This function finds the intrinsic matrices for all the images
-	return matrixList[idx1], matrixList[idx2]
+import plotly.graph_objects as go
 
 def detectFeatures(img1, img2, featureDetection):
 	if featureDetection == "SIFT":
@@ -24,7 +21,6 @@ def detectFeatures(img1, img2, featureDetection):
 def matchFeatures(img1, img2, featureDetection="SIFT"): # sample code from tutorial
 	# This function uses the code from the tutorial to find a list of matching features
 	# between two images and returns them as two corresponding lists.
-	start = time()
 	if featureDetection == "SIFT":
 		kp1, desc1, kp2, desc2 = detectFeatures(img1, img2, featureDetection)
 	elif featureDetection == "SURF":
@@ -45,8 +41,6 @@ def matchFeatures(img1, img2, featureDetection="SIFT"): # sample code from tutor
 	src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches_without_list]) #.reshape(-1, 2)
 	dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches_without_list]) #.reshape(-1, 1, 2)
 	# plotFeatures(img1, kp1, img2, kp2, good_matches)
-	finish = time()
-	print(finish - start)
 	return src_pts, dst_pts
 
 def drawKeypoints(img1, kp1, img2, kp2):
@@ -66,45 +60,37 @@ def plotFeatures(img1, kp1, img2, kp2, good_matches):
 	                          matchColor=(0, 255, 0))
 	plt.imshow(img3), plt.show()
 
-def estimateRelativePose(img1, img2, idx1, idx2):
+def estimateRelativePose(img1, img2, idx1, idx2, K):
 	# This function estimates the relative pose of the camera in img1 wrt img2
-	# pts1, pts2 = matchFeatures(img1, img2) # match time 35.29676103591919
+	pts1, pts2 = matchFeatures(img1, img2, 'SIFT') # match time 35.29676103591919
 	# pts1, pts2 = np.load(outputDir + 'pts1.npy'), np.load(outputDir + 'pts2.npy')
-	pts1, pts2 = np.load(outputDir + 'pts1.npy'), np.load(outputDir + 'pts2.npy')
+	# pts1, pts2 = np.load(outputDir + 'pts1.npy'), np.load(outputDir + 'pts2.npy')
 	# Find the fundamental matrix F (options: 7pt, 8pt, LMEDS, RANSAC)
 	F = cv2.findFundamentalMat(pts1, pts2, cv2.FM_8POINT)[0]
 
-	'''
-	# Code to test the fundamental matrix 
-	p1, p2 = np.ones(3), np.ones(3)
-	maxErr = 0
-	randIndex = np.random.randint(0,len(pts1))
-	# print(pts1[1], pts2[1])
-	p1[0:2] = pts1[randIndex][0:2]
-	p2[0:2] = pts2[randIndex][0:2]
-	print(p1 @ F @ p2.reshape(3,1))
-	# for i in range(len(pts1)):
-	# 	p1[0:2] = pts1[i][0:2]
-	# 	p2[0:2] = pts2[i][0:2]
-	# 	maxErr = max(maxErr, abs(p1 @ F @ p2.reshape(3,1)))
-	# print(maxErr)
-	# return
-	'''
-
-	# Obtain the camera intrinsic matrix K
-	# Normal Scenario
-	# 1. Run through the camera calibration pipeline
-	# 2. Call findCameraIntrinsic to retrieve camera matrix
-	K1, K2 = findCameraIntrinsic(idx1, idx2)
-	# print(K1.shape, K2.shape, F.shape)
 	# Find the essential matrix E
-	E = K2.T @ F @ K1
-	# Since K1 and K2 are the same
-	retval, R, t, mask = cv2.recoverPose(E, pts1, pts2, cameraMatrix=K1)
-	# print(R)
-	# print(t)
-	return R,t, pts1, pts2
+	E = K.T @ F @ K
+	retval, R, t, mask = cv2.recoverPose(E, pts1, pts2, cameraMatrix=K)
+	return R,t, pts1.astype('int16'), pts2.astype('int16')
 
+def plot_pointCloud(pc):
+	'''
+	plots the Nx6 point cloud pc in 3D
+	assumes (1,0,0), (0,1,0), (0,0,-1) as basis
+	'''
+	fig = go.Figure(data=[go.Scatter3d(
+		x=pc[:, 0],
+		y=pc[:, 1],
+		z=-pc[:, 2],
+		mode='markers',
+		marker=dict(
+			size=2,
+			color=pc[:, 3:][..., ::-1],
+			opacity=0.8
+		)
+	)])
+	fig.show()
+'''
 if __name__ == "__main__":
 	from os import listdir
 	from os.path import isfile, join
@@ -132,17 +118,20 @@ if __name__ == "__main__":
 				matrixList[i][j,k] = np.float(row[k])
 	idx1, idx2 = 0, 1
 
-	# get the relative pose between the two views
-	R, t, srcPts, dstPts = estimateRelativePose(images[idx1], images[idx2], idx1, idx2) # estimate time 35.433154821395874
-
 	# instantiate viewSet object
 	v = ViewSet()
 
+	# set instrinsics
+	v.setIntrinsics(matrixList[0])
+
 	# add the first view
-	v.addView(0, None, None)
+	# v.addView(0, None, None)
+
+	# get the relative pose between the two views
+	R, t, srcPts, dstPts = estimateRelativePose(images[idx1], images[idx2], idx1, idx2, v.intrinsics) # estimate time 35.433154821395874
 
 	# add the second view
-	v.addView(1, R, t)
+	# v.addView(1, R, t)
 
 	# v.debugViews()
 
@@ -154,5 +143,22 @@ if __name__ == "__main__":
 	discovered = [dict(),dict()]
 	v.findPointTracks(listOfMatches, discovered)
 	# find the projections
+	index = np.random.randint(0, len(listOfMatches))
+	print(listOfMatches[index].debugViews())
+	pointCloud = np.zeros((len(listOfMatches), 6))
+	for m in range(len(listOfMatches)):
+		listOfMatches[m].findProjections(v)
+		listOfMatches[m].findBestProjection(v)
+		pointCloud[m][0:3] = listOfMatches[m].bestProjection.reshape(3)
+		pointCloud[m][3:] = np.array([255., 0., 0.])
+
+
+
+	print(listOfMatches[index].debugProjections())
+	# find the best projection
+	print(listOfMatches[index].projections)
+	print(listOfMatches[index].bestProjection)
+	plot_pointCloud(pointCloud)
+'''
 
 

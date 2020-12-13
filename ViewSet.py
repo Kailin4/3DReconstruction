@@ -42,6 +42,9 @@ class ViewSet:
 		self.connections[SOURCE_POINTS].append(srcPts)
 		self.connections[DESTINATION_POINTS].append(dstPts)
 
+	def getRelativeTransforms(self, viewId1, viewId2):
+		index = viewId1 * (self.numViews) + viewId2 - (viewId1+1)*(viewId1+2)//2
+		return self.connections[RELATIVE_ROTATION][index], self.connections[RELATIVE_TRANSLATION][index]
 	def findPointTracks(self, listOfMatches, discovered):
 		# for every connection
 		for i in range(len(self.connections[VIEW_ID_1])):

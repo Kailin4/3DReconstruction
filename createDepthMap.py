@@ -103,11 +103,12 @@ def estimateRelativePose(img1, img2, idx1, idx2):
 	retval, R, t, mask = cv2.recoverPose(E, pts1, pts2, cameraMatrix=K1)
 	# print(R)
 	# print(t)
-	return R,t
+	return R,t, pts1, pts2
 
 if __name__ == "__main__":
 	from os import listdir
 	from os.path import isfile, join
+	from ViewSet import *
 
 	# set the images directory for semper dataset
 	imgDir = "images/semper/"
@@ -130,6 +131,28 @@ if __name__ == "__main__":
 			for k in range(3):
 				matrixList[i][j,k] = np.float(row[k])
 	idx1, idx2 = 0, 1
-	R, t = estimateRelativePose(images[idx1], images[idx2], idx1, idx2) # estimate time 35.433154821395874
-	# print(R)
-	# print(t)
+
+	# get the relative pose between the two views
+	R, t, srcPts, dstPts = estimateRelativePose(images[idx1], images[idx2], idx1, idx2) # estimate time 35.433154821395874
+
+	# instantiate viewSet object
+	v = ViewSet()
+
+	# add the first view
+	v.addView(0, None, None)
+
+	# add the second view
+	v.addView(1, R, t)
+
+	# v.debugViews()
+
+	# add connection
+	v.addConnection(0, 1, R, t, srcPts, dstPts)
+	# v.debugConnections()
+	# find the matches
+	listOfMatches = []
+	discovered = [dict(),dict()]
+	v.findPointTracks(listOfMatches, discovered)
+	# find the projections
+
+

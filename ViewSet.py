@@ -27,10 +27,10 @@ class ViewSet:
 
 		# Another note cv2.triangulatePoints projects from world coordinates to the image coordinates
 		# So ABSOLUTE ROTATION stores absolute to image
-		absR = relRot @ self.views[ABSOLUTE_ROTATION][viewId-1]
+		absR = self.views[ABSOLUTE_ROTATION][viewId-1] @ relRot
 		# Keep in mind cv2 x2 = R(x1) + t
-		absT = relRot @ self.views[ABSOLUTE_TRANSLATION][viewId-1] + relTrans
-
+		absT = absR @ relTrans + self.views[ABSOLUTE_TRANSLATION][viewId-1]
+		# later have to multiply by -1
 		self.views[ABSOLUTE_ROTATION].append(absR)
 		self.views[ABSOLUTE_TRANSLATION].append(absT)
 
@@ -45,6 +45,7 @@ class ViewSet:
 	def getRelativeTransforms(self, viewId1, viewId2):
 		index = viewId1 * (self.numViews) + viewId2 - (viewId1+1)*(viewId1+2)//2
 		return self.connections[RELATIVE_ROTATION][index], self.connections[RELATIVE_TRANSLATION][index]
+
 	def findPointTracks(self, listOfMatches, discovered):
 		# for every connection
 		for i in range(len(self.connections[VIEW_ID_1])):
@@ -53,8 +54,10 @@ class ViewSet:
 			viewId2 = self.connections[VIEW_ID_2][i]
 			for j in range(len(self.connections[SOURCE_POINTS][i])):
 				# Get the coordinates of the point
-				pt1 = tuple(self.connections[SOURCE_POINTS][i][j].astype('int16')) # maybe convert to int tuple here
-				pt2 = tuple(self.connections[DESTINATION_POINTS][i][j].astype('int64')) # maybe convert to int tuple
+				pt1 = tuple(self.connections[SOURCE_POINTS][i][j]) # maybe convert to int tuple here
+				pt2 = tuple(self.connections[DESTINATION_POINTS][i][j]) # maybe convert to int tuple
+				# pt1 = tuple(self.connections[SOURCE_POINTS][i][j].astype('int16')) # maybe convert to int tuple here
+				# pt2 = tuple(self.connections[DESTINATION_POINTS][i][j].astype('int64')) # maybe convert to int tuple
 				# check if the point is in discovered
 				# consider the cases:
 				# if pt1 and pt2 are discovered do nothing

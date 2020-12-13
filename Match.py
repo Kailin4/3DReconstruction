@@ -10,6 +10,7 @@ class Match:
 		self.projections = dict()
 		# tuple (2 view ids):
 		self.bestProjection = None
+		self.e = 1e-6
 
 	def debugViews(self): print(self.views)
 
@@ -39,20 +40,32 @@ class Match:
 				pt1 = self.views[viewId1]
 				pt2 = self.views[viewId2]
 
-				rot1 = viewSet.views[ABSOLUTE_ROTATION][viewId1]
-				rot2 = viewSet.views[ABSOLUTE_ROTATION][viewId2]
-
-				trans1 = viewSet.views[ABSOLUTE_TRANSLATION][viewId1]
-				trans2 = viewSet.views[ABSOLUTE_TRANSLATION][viewId2]
-
-				# -1 due to the opencv implementation
-				proj1 = np.hstack((rot1,-1 * trans1))
-				proj2 = np.hstack((rot2,-1 * trans2))
-				projection = self.lounetHiggins()
+				# rot1 = viewSet.views[ABSOLUTE_ROTATION][viewId1]
+				# rot2 = viewSet.views[ABSOLUTE_ROTATION][viewId2]
+				#
+				# trans1 = viewSet.views[ABSOLUTE_TRANSLATION][viewId1]
+				# trans2 = viewSet.views[ABSOLUTE_TRANSLATION][viewId2]
+				#
+				# # -1 due to the opencv implementation
+				# proj1 = np.hstack((rot1,-1 * trans1))
+				# proj2 = np.hstack((rot2,-1 * trans2))
+				projection = self.lounetHiggins(viewSet, viewId1, viewId2, pt1, pt2)
 				# projection = cv2.triangulatePoints(proj1, proj2, pt1, pt2)
-				self.addProjection(viewId1, viewId2, projection)
+				self.addProjection(viewSet, viewId1, viewId2, projection)
 
-	def lounetHiggins(self):
+	def longuetHiggins(self, viewSet, viewId1, viewId2, y, y_prime):
+		relRot, relTrans = viewSet.getRelativeTransforms(viewId1, viewId2)
+		r1, r2, r3 = relRot[0], relRot[1], relRot[2]
+		fac = (r1 - y_prime[0] * r3)
+		# Slight modification to avoid division by zero
+		z1 = (fac @ relTrans) / ((fac @ y) + self.e)
+		fac = (r2 - y_prime[1] * r3)
+		z2 = (fac @ relTrans) / ((fac @ y) + self.e)
+		# Take the average of the two estimates
+		z = np.avg(z1, z2)[0]
+		proj1 = np.zeros(3)
+
+
 		return None
 
 	def findOptimalProjection(self, viewSet):

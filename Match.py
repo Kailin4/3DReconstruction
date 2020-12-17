@@ -65,11 +65,20 @@ class Match:
 		# 3D coordinates in the first viewId1 space
 		self.addProjection(viewId1, viewId2, projection)
 
+	def filterProjections(self, lowerBound, upperBound):
+		for views in self.projections.keys():
+			p = self.projections[views]
+			normP = np.linalg.norm(p)
+			if normP > upperBound or normP < lowerBound:
+				self.projections[views] = None
+
 	def findBestProjection(self, viewSet):
 		listOfViews = sorted(list(self.getViews()))
 		# reproject the projection on each of the views
 		minError = np.inf
+		bestProj = None
 		for views, pt in self.projections.items():
+			if pt is None: continue
 			error = 0
 			viewId1 = views[0]
 			for viewIdTarget in listOfViews:

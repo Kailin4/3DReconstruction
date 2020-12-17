@@ -90,6 +90,41 @@ def plot_pointCloud(pc):
 		)
 	)])
 	fig.show()
+
+def computeProjections(listOfMatches, viewSet, isBest):
+	if isBest:
+		for m in listOfMatches:
+			m.findBestProjection(viewSet)
+	else:
+		for m in listOfMatches:
+			m.findProjections(viewSet)
+
+
+def filterRelativeProjections(listOfMatches):
+	# Get a list of all the projections' norms
+	norms = []
+	for m in listOfMatches:
+		for p in m.getProjections():
+			norms.append(np.linalg.norm(p))
+	# Reject the outliers that are more than 1.5 * IQR
+	# below the first quartile or above the third quartile
+	# Find the bounds
+	q75, q25 = np.percentile(norms, [75,25])
+	iqr = q75 - q25
+	lowerBound = q25 - 1.5 * iqr
+	upperBound = q75 + 1.5 * iqr
+	for m in listOfMatches:
+		m.filterProjections(lowerBound, upperBound)
+
+def filterWorldProjections(listOfMatches):
+	print(len(listOfMatches))
+	listOfMatches = [m for m in listOfMatches if m.bestProjection is not None]
+	print(len(listOfMatches))
+
+
+
+
+
 '''
 if __name__ == "__main__":
 	from os import listdir

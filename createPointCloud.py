@@ -117,12 +117,15 @@ def filterRelativeProjections(listOfMatches):
 		m.filterProjections(lowerBound, upperBound)
 
 def filterWorldProjections(listOfMatches):
-	print(len(listOfMatches))
 	listOfMatches = [m for m in listOfMatches if m.bestProjection is not None]
-	print(len(listOfMatches))
+	return listOfMatches
 
-
-
+def createPointCloud(listOfMatches):
+	pointCloud = np.zeros((len(listOfMatches), 6))
+	for m in range(len(listOfMatches)):
+		pointCloud[m][0:3] = listOfMatches[m].bestProjection.reshape(3)
+		pointCloud[m][3:] = np.array([255., 0., 0.])
+	return pointCloud
 
 
 '''

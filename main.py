@@ -1,7 +1,7 @@
 from os import listdir
 from os.path import isfile, join
 from ViewSet import *
-from createDepthMap import *
+from createPointCloud import *
 from time import time
 
 start = time()
@@ -17,6 +17,7 @@ cameraFiles = [imgDir + f for f in files if "camera" in f]
 imgFiles = [imgDir + f for f in files if "ppm" in f and "camera" not in f and "3D" not in f]
 # convert ppm to numpy array
 images = [cv2.imread(f, cv2.IMREAD_GRAYSCALE) for f in imgFiles]
+# images = images[0:2]
 numImages = len(images)
 # load the camera matrices
 matrixFiles = [open(f) for f in cameraFiles]
@@ -45,12 +46,11 @@ discovered = [dict() for i in range(numImages)]
 v.findPointTracks(listOfMatches, discovered)
 # find the projections
 index = np.random.randint(0, len(listOfMatches))
-pointCloud = np.zeros((len(listOfMatches), 6))
-for m in range(len(listOfMatches)):
-	listOfMatches[m].findProjections(v)
-	listOfMatches[m].findBestProjection(v)
-	pointCloud[m][0:3] = listOfMatches[m].bestProjection.reshape(3)
-	pointCloud[m][3:] = np.array([255., 0., 0.])
+computeProjections(listOfMatches, v, False)
+filterRelativeProjections(listOfMatches)
+computeProjections(listOfMatches, v, True)
+listOfMatches = filterWorldProjections(listOfMatches)
+pointCloud = createPointCloud(listOfMatches)
 finish = time()
 print(finish - start)
 plot_pointCloud(pointCloud)

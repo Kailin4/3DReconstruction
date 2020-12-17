@@ -76,7 +76,9 @@ class Match:
 				if viewId1 != viewIdTarget:
 					targetPt = self.views[viewIdTarget]
 					relRot, relTrans = viewSet.getRelativeTransforms(viewId1, viewIdTarget)
-					reproj = (viewSet.intrinsics @ (relRot @ pt + relTrans)).reshape(3)[0:2]
+					reproj = (viewSet.intrinsics @ (relRot @ pt + relTrans)).reshape(3)
+					reproj /= reproj[2]
+					reproj = reproj[0:2]
 					error += np.linalg.norm(reproj - targetPt)
 			if error < minError:
 				# convert to world space
@@ -86,7 +88,3 @@ class Match:
 				else: bestProj = pt
 				# bestProj /= np.linalg.norm(bestProj)
 		self.bestProjection = bestProj
-
-
-
-

@@ -1,25 +1,17 @@
-from ViewSet import *
+'''
+File used to test toy examples for
+earlier versions of Connections class
+'''
 
-def testAddOneView():
-	v = ViewSet()
-	v.addView(0, None, None, None, None)
-	v.debugViews()
-
-def testAddMultipleViews(images, rotation, translation):
-	# Just test the rotation and translation
-	v = ViewSet()
-	v.addView(0, None, None, None, None)
-	for i in range(1, len(images)):
-		v.addView(i, rotation[i], translation[i], None, None)
-	v.debugViews()
+from Connections import *
 
 def testAddOneConnection(R01, t01):
-	v = ViewSet()
+	v = Connections()
 	v.addConnection(0,1, R01, t01, None, None)
 	v.debugConnections()
 
-def testFindPointTracksTwo():
-	v = ViewSet()
+def testFindCameraSpacePointsTwo():
+	v = Connections()
 	srcPts = np.array([[1,1],
 	                   [3,3],
 	                   [5,5]])
@@ -30,11 +22,11 @@ def testFindPointTracksTwo():
 	v.debugConnections()
 	listOfMatches = []
 	discovered = [dict(),dict()]
-	v.findPointTracks(listOfMatches, discovered)
+	v.findMatches(listOfMatches, discovered)
 	[match.debugViews() for match in listOfMatches]
 
-def testFindPointTracksThree():
-	v = ViewSet()
+def testFindCameraSpacePointsThree():
+	v = Connections()
 	srcPts01 = np.array([[1,1],
 	                   [4,4]])
 	dstPts01 = np.array([[2,2],
@@ -51,11 +43,11 @@ def testFindPointTracksThree():
 	# v.debugConnections()
 	listOfMatches = []
 	discovered = [dict(),dict(), dict()]
-	v.findPointTracks(listOfMatches, discovered)
+	v.findMatches(listOfMatches, discovered)
 	[match.debugViews() for match in listOfMatches]
 
-def testFindPointTracksFour():
-	v = ViewSet()
+def testFindCameraSpacePointsFour():
+	v = Connections()
 	srcPts01 = np.array([[1,1],
 	                     [8,8],
 	                     [17,17]])
@@ -101,7 +93,7 @@ def testFindPointTracksFour():
 	# v.debugConnections()
 	listOfMatches = []
 	discovered = [dict(),dict(), dict(), dict()]
-	v.findPointTracks(listOfMatches, discovered)
+	v.findMatches(listOfMatches, discovered)
 	[match.debugViews() for match in listOfMatches]
 
 if __name__ == "__main__":
@@ -123,13 +115,13 @@ if __name__ == "__main__":
 	'''
 	'''
 	# Code to test find matches in one pair of views
-	testFindPointTracksTwo()
+	testFindCameraSpacePointsTwo()
 	'''
 	'''
 	# Code to test find matches in three views
-	testFindPointTracksThree()
+	testFindCameraSpacePointsThree()
 	'''
 	'''
 	Code to test find matches in three views
-	testFindPointTracksFour()
+	testFindCameraSpacePointsFour()
 	# '''

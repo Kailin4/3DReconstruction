@@ -1,18 +1,11 @@
-# VIEW_ATTRIBUTES = 5
-# VIEW_ATTRIBUTES = 3
-# VIEW_ID = 0
-# ABSOLUTE_ROTATION = 1
-# ABSOLUTE_TRANSLATION = 2
-# DESCRIPTORS = 3
-# KEYPOINTS = 4
+'''
+This file contains the constants that are used for indexing
+into the connections data structure.
 
-# viewAttributesDict = {
-# 'VIEW_ID': VIEW_ID,
-# 'ABSOLUTE_ROTATION': ABSOLUTE_ROTATION,
-# 'ABSOLUTE_TRANSLATION': ABSOLUTE_TRANSLATION,
-# # 'DESCRIPTORS': DESCRIPTORS,
-# # 'KEYPOINTS': KEYPOINTS
-# }
+The dictionary is used for neat debugging the fields of the
+data structure.
+'''
+
 
 CONNECTION_ATTRIBUTES = 6
 VIEW_ID_1 = 0
@@ -22,6 +15,8 @@ RELATIVE_TRANSLATION = 3
 SOURCE_POINTS = 4
 DESTINATION_POINTS = 5
 
+
+
 connectionAttributesDict = {
 	'VIEW_ID_1': VIEW_ID_1,
 	'VIEW_ID_2': VIEW_ID_2,
@@ -30,3 +25,5 @@ connectionAttributesDict = {
 	'SOURCE_POINTS': SOURCE_POINTS,
 	'DESTINATION_POINTS': DESTINATION_POINTS
 }
+
+E = [1e-6]

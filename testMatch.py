@@ -1,3 +1,8 @@
+'''
+File used to test toy examples for
+earlier versions of Match class
+'''
+
 from Match import *
 
 def testMatchViews():

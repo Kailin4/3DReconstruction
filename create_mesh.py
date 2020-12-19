@@ -202,7 +202,7 @@ def create_ply(color_array, vertices_3d, faces_3d, edges_3d):
     mesh.vertex_colors=color_array
     # mesh.paint_uniform_color(np.array([0.0,0.1,0.2]))
     print(mesh, 'surface area=', mesh.get_surface_area())
-    o3d.io.write_triangle_mesh(output_path+"ori_mesh_our_1218.ply", mesh)
+    o3d.io.write_triangle_mesh(output_path+"ark.ply", mesh)
     return True
 
 def run_our_alg(point_cloud):

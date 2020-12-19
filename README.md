@@ -33,3 +33,7 @@ Inside output folder, it has these files:
 - pc_1218.ply: this is the 3d reconstruction of our own extracted point cloud using our algorithm
 
 test_poisson.py includes some testing code, which can be ignored. 
+
+## Deep learning
+The two files contain the general structure of training the models using the dataset described in the report. 
+The information about the other networks explored can be found in the report. 

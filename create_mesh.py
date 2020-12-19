@@ -238,16 +238,16 @@ if not os.path.exists(output_path):
     os.mkdir(output_path)
 
 # input data filename this is the sample point cloud we obtained from online
-# dataname="sample_w_normals.xyz" 
-# point_cloud= np.loadtxt(dataname,skiprows=1)
-# point_cloud=point_cloud[0:-1:100,:]
+dataname="sample_w_normals.xyz" 
+point_cloud= np.loadtxt(dataname,skiprows=1)
+point_cloud=point_cloud[0:-1:500,:]
 # np.savetxt('sample_500.xyz', point_cloud)
 
 
 #our generated sample cloud
-dataname="pc.npy" 
-point_cloud= np.load(dataname)
-print(point_cloud, len(point_cloud))
+# dataname="pc.npy" 
+# point_cloud= np.load(dataname)
+# print(point_cloud, len(point_cloud))
 
 run = ['ark', 'bpa', 'pr'] # include the algorithm you want to run in the list 
 run_algo(run, point_cloud)

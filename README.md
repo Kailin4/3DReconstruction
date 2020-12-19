@@ -11,4 +11,5 @@ Connections.py contains the class to store information between all pair of views
 Match.py contains the class to store the relationship between a single 2D feature with multiple views
 and its associated 3D representations.
 
+The images are in a submodule, run git submodule update --remote --init.
 

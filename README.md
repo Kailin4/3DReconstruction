@@ -13,3 +13,16 @@ and its associated 3D representations.
 
 The images are in a submodule, run git submodule update --remote --init.
 
+
+create_mesh.py is the script to create mesh based on the point cloud give. 
+Inside the script, it supports 3 different algorithms running, the one we defined, 
+the ball pivoting algorithm and the poisson reconstruction algorithm. 
+To run it
+- Change line 251 to select the wanted algorithm
+- Change line 247 to load the point cloud. 
+- Change line 205(our algo), line 46(bpa algo), line 23(poisson algo) and line 235 to change the path saving 'ply' file
+- run python creat_mesh.py
+
+
+test_poisson.py includes some testing code, which can be ignored. 
+

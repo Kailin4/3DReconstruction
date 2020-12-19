@@ -2,27 +2,8 @@ import numpy as np
 import open3d as o3d
 import os
 
-# Load data
-input_path="./"
-output_path="out/"
-if not os.path.exists(output_path):
-    os.mkdir(output_path)
-
-dataname="sample_w_normals.xyz"
-point_cloud= np.loadtxt(dataname,skiprows=1)
-point_cloud=point_cloud[0:-1:100,:]
-# np.savetxt('sample_500.xyz', point_cloud)
-
-
-# dataname="sample_500.xyz"
-# point_cloud= np.loadtxt(dataname,skiprows=1)
-
-# dataname="pc.npy"
-# point_cloud= np.load(dataname)
-print(point_cloud, len(point_cloud))
-
 # poisson creating mesh
-def create_mesh(point_cloud):
+def pr(point_cloud):
     # initializing point clouds used to test
     pcd = o3d.geometry.PointCloud() # initialize point cloud
     
@@ -39,9 +20,9 @@ def create_mesh(point_cloud):
     p_mesh_crop = poisson_mesh.crop(bbox)
 
     # Export meshes to visualize in meshlab
-    o3d.io.write_triangle_mesh(output_path+"ori_100_poi_1218.ply", poisson_mesh)
-    o3d.io.write_triangle_mesh(output_path+"p_mesh_c_100_poi_1218.ply", p_mesh_crop)
+    o3d.io.write_triangle_mesh(output_path+"ori_100_pr.ply", poisson_mesh)
 
+# ball pivoting algorithm
 def bpa(point_cloud):
     # initializing point clouds used to test
     pcd = o3d.geometry.PointCloud() # initialize point cloud
@@ -64,137 +45,12 @@ def bpa(point_cloud):
     print(bpa_mesh, bpa_mesh.get_surface_area())
     o3d.io.write_triangle_mesh(output_path+"ori_100_bpa_1218.ply", bpa_mesh)
 
-def get_edge(coord_array, not_visted, vertice_face_match):
-    rm_pt = not_visted.pop()
-    calc_arry = coord_array- rm_pt
-    calc_arry= np.sum(calc_arry[:,0:3]*calc_arry[:,0:3], axis=1)
-
-    my_idx = np.argmin(calc_arry)
-    calc_arry[my_idx]=10000000000000000000000000000000
-
-    min_idx = np.argmin(calc_arry)
-    # print(calc_arry[min_idx])
-    calc_arry[min_idx]=100000000000000000000000000
-    # print(calc_arry[min_idx])
-    sec_min_idx = np.argmin(calc_arry)
-    # print(calc_arry,my_idx, min_idx, sec_min_idx, calc_arry[sec_min_idx])
-    while sec_min_idx == min_idx:
-        calc_arry[sec_min_idx]=100000000000000000000000000
-        sec_min_idx = np.argmin(calc_arry)
-    # print(calc_arry[min_idx])
-    sec_min_idx = np.argmin(calc_arry)
-    # print(min_idx, sec_min_idx)
-
-    tmp_edge = [(tuple(coord_array[min_idx]), tuple(coord_array[sec_min_idx]))]
-    # print(tmp_edge)
-    
-    remove_from_set(not_visted, tmp_edge[0][0])
-    remove_from_set(not_visted, tmp_edge[0][1])
-    remove_from_set(not_visted, rm_pt)
-
-    return tmp_edge, not_visted
-
 def remove_from_set(pt_set, pt):
     if pt in pt_set:
         pt_set.remove(pt)
 
-def find_Vertice(visited_edge, edge, coord_array, not_visted, tmp_edge, faces_3d, vertices_face_match):
-    if len(tmp_edge)<=1:
-        tmp_edge=[]
-    else:
-        tmp_edge=tmp_edge[1::]
-    
-    # check if the edge has been examined or not
-    if edge in visited_edge:
-        return visited_edge, tmp_edge, faces_3d
-    # find new vertice for next triangle
 
-    visited_edge.add(edge)
-    u,v = edge
-    # print('edge,', u.v)
-    sum_arr = np.sum((coord_array- u)[:,0:3]*(coord_array- u)[:,0:3], axis=1) + np.sum((coord_array-v)[:,0:3]*(coord_array-v)[:,0:3], axis=1) 
-    min_idx = np.argmin(sum_arr)
-    min_coord = vertices_face_match[min_idx]
-    # print(u,v,min_coord)
-    # print(min_idx, min_coord)
-    if min_coord == u:
-        sum_arr[min_idx]=1000000000000000
-        min_idx = np.argmin(sum_arr)
-        min_coord = vertices_face_match[min_idx]
-
-    if min_coord == v:
-        sum_arr[min_idx]=1000000000000000
-        min_idx = np.argmin(sum_arr)
-
-    new_vertice = tuple(coord_array[min_idx])
-    # print(123, min_idx, vertices_face_match.index(u), vertices_face_match.index(u))
-    faces_3d.append([min_idx, vertices_face_match.index(v), vertices_face_match.index(u)])
-    # faces_3d.append([3, min_idx, vertices_face_match.index(u), vertices_face_match.index(u)])
-
-    # delete vertice if it has not been visited 
-    remove_from_set(not_visted, new_vertice)
-
-    # update the queue, to include new edges 
-    tmp_edge += [(u,new_vertice), (v,new_vertice)]
-    return visited_edge, tmp_edge, faces_3d
-
-
-def get_trg(point_cloud):
-    # all points' coordinate help to keep track of while loop condition
-    not_visted=set(tuple(map(tuple, point_cloud[:,0:3])))
-    vertices_3d = point_cloud[:,0:3]
-    vertices_face_match = list(map(tuple, point_cloud[:,0:3]))
-
-    # coordinate array of the point cloud
-    coord_array = point_cloud[:,0:3]
-    color_array = point_cloud[:,3:6]
-
-    # initialization  
-    visited_edge = set()
-    faces_3d = []
-
-
-    while len(not_visted)>0:
-        tmp_edge, not_visted = get_edge(coord_array, not_visted, vertices_face_match)
-        while len(tmp_edge)>0:
-            edge = tmp_edge[0]
-            visited_edge, tmp_edge, faces_3d=find_Vertice(visited_edge, edge, coord_array, not_visted, tmp_edge, faces_3d, vertices_face_match)
-    edges_3d = list(visited_edge)
-    return vertices_3d, faces_3d, edges_3d
-
-
-
-def get_start_edge(coord_array, not_visted, vertices_face_match):
-    rm_pt = not_visted.pop()
-    calc_arry = coord_array- rm_pt
-    calc_arry= np.sum(calc_arry[:,0:3]*calc_arry[:,0:3], axis=1)
-
-    my_idx = np.argmin(calc_arry)
-    calc_arry[my_idx]=10000000000000000000000000000000
-
-    min_idx = np.argmin(calc_arry)
-    # print(calc_arry[min_idx])
-    calc_arry[min_idx]=100000000000000000000000000
-    # print(calc_arry[min_idx])
-    sec_min_idx = np.argmin(calc_arry)
-    # print(calc_arry,my_idx, min_idx, sec_min_idx, calc_arry[sec_min_idx])
-    while sec_min_idx == min_idx:
-        calc_arry[sec_min_idx]=100000000000000000000000000
-        sec_min_idx = np.argmin(calc_arry)
-    # print(calc_arry[min_idx])
-    sec_min_idx = np.argmin(calc_arry)
-    # print(min_idx, sec_min_idx)
-
-    tmp_edge = [(tuple(coord_array[min_idx]), tuple(coord_array[sec_min_idx]))]
-    # print(tmp_edge)
-    
-    remove_from_set(not_visted, tmp_edge[0][0])
-    remove_from_set(not_visted, tmp_edge[0][1])
-    remove_from_set(not_visted, rm_pt)
-
-    return tmp_edge, not_visted
-
-def get_edge_1(coord_array, not_visted, vertices_face_match, front, visited_vertex):
+def get_edge(coord_array, not_visted, vertices_face_match, visited_vertex):
     rm_pt = not_visted.pop()
     calc_arry = coord_array- rm_pt
     calc_arry= np.sum(calc_arry[:,0:3]*calc_arry[:,0:3], axis=1)
@@ -224,7 +80,7 @@ def get_edge_1(coord_array, not_visted, vertices_face_match, front, visited_vert
 
     return front, not_visted
 
-def find_Vertice_1(visited_edge, edge, coord_array, not_visted, front, faces_3d, vertices_face_match, seed_trig, faces_3d_dict, vertice_dict):
+def find_Vertice(visited_edge, edge, coord_array, not_visted, front, faces_3d, vertices_face_match, seed_trig, faces_3d_dict, vertice_dict):
     # check if the edge has been examined or not
 
     # find new vertice for next triangle
@@ -269,9 +125,6 @@ def find_Vertice_1(visited_edge, edge, coord_array, not_visted, front, faces_3d,
     #     min_coord = vertices_face_match[min_idx]
 
     new_vertice = tuple(coord_array[min_idx])
-    # print(123, min_idx, vertices_face_match.index(u), vertices_face_match.index(u))
-
-    
 
     if (min_idx, vertices_face_match.index(v), vertices_face_match.index(u)) in faces_3d_dict:
         front.remove(edge)
@@ -287,8 +140,6 @@ def find_Vertice_1(visited_edge, edge, coord_array, not_visted, front, faces_3d,
     remove_from_set(not_visted, new_vertice)
     
     # update the queue, to include new edges 
-
-
     if seed_trig:
         front.remove((u,v))
         front += [(u,new_vertice,v), (v,new_vertice, u)]
@@ -305,12 +156,8 @@ def find_Vertice_1(visited_edge, edge, coord_array, not_visted, front, faces_3d,
     
     return visited_edge, front, faces_3d, vertice_dict
 
-def is_valid():
 
-    pass
-
-
-def get_trg_1(point_cloud):
+def get_trg(point_cloud):
     # all points' coordinate help to keep track of while loop condition
     not_visted=set(tuple(map(tuple, point_cloud[:,0:3])))
     vertices_3d = point_cloud[:,0:3]
@@ -327,30 +174,25 @@ def get_trg_1(point_cloud):
     faces_3d = []
     faces_3d_dict=set()
     vertice_dict={}
-    front, not_visted = get_start_edge(coord_array, not_visted, vertices_face_match)
+    front, not_visted = get_edge(coord_array, not_visted, vertices_face_match, visited_vertex)
 
     seed_trig=True
 
     while len(not_visted)>0:
-        # tmp_edge, not_visted = get_edge_1(coord_array, not_visted, vertices_face_match)
-        front, not_visted=get_edge_1(coord_array, not_visted, vertices_face_match, front, visited_vertex)
+        front, not_visted=get_edge(coord_array, not_visted, vertices_face_match, visited_vertex)
         seed_trig=True
-        # print(len(not_visted))
         while len(front)>0:
             edge = front[0]
-            print(edge)
-            visited_edge, front, faces_3d, vertice_dict=find_Vertice_1(visited_edge, edge, coord_array, not_visted, front, faces_3d, vertices_face_match, seed_trig, faces_3d_dict, vertice_dict)
+            # print(edge)
+            visited_edge, front, faces_3d, vertice_dict=find_Vertice(visited_edge, edge, coord_array, not_visted, front, faces_3d, vertices_face_match, seed_trig, faces_3d_dict, vertice_dict)
             seed_trig=False
-            # print(len(front))
     edges_3d = list(visited_edge)
     return color_array, vertices_3d, faces_3d, edges_3d
 
 
+# write the mesh into 'ply' file to be able to display 
 def create_ply(color_array, vertices_3d, faces_3d, edges_3d):
-    # import PyMesh_0.python.PyMesh as pymesh
     faces_3d=np.asarray(faces_3d)
-    # pymesh.meshio.save_mesh_raw('out_mesh.ply', vertices_3d, faces_3d)
-    print(vertices_3d[faces_3d[0]], vertices_3d[faces_3d[2]], vertices_3d[faces_3d[1]])
     o3d.geometry.TriangleMesh.create_coordinate_frame()
 
     vertices_3d=o3d.utility.Vector3dVector(vertices_3d)
@@ -359,22 +201,55 @@ def create_ply(color_array, vertices_3d, faces_3d, edges_3d):
     mesh=o3d.geometry.TriangleMesh(vertices_3d,faces_3d)
     mesh.vertex_colors=color_array
     # mesh.paint_uniform_color(np.array([0.0,0.1,0.2]))
-    print(mesh, mesh.get_surface_area())
+    print(mesh, 'surface area=', mesh.get_surface_area())
     o3d.io.write_triangle_mesh(output_path+"ori_mesh_our_1218.ply", mesh)
     return True
 
+def run_our_alg(point_cloud):
+    color_array,vertices_3d, faces_3d, edges_3d = get_trg(point_cloud)
+    create_ply(color_array, vertices_3d, faces_3d, edges_3d)
+
+def run_algo(run, point_cloud):
+    print(run)
+    for i in run:
+        if i == 'ark':
+            start = time.time()
+            run_our_alg(point_cloud)
+            tri = time.time()-start
+            print(i, tri)
+        elif i == 'bpa':
+            start = time.time()
+            bpa(point_cloud)
+            tri = time.time()-start
+            print(i, tri)
+        elif i == 'pr':
+            start = time.time()
+            pr(point_cloud)
+            tri = time.time()-start
+            print(i, tri)
+        else:
+            print('not implemented')
 
 import time
-start = time.time()
-# create_mesh(point_cloud) # in reference to https://towardsdatascience.com/5-step-guide-to-generate-3d-meshes-from-point-clouds-with-python-36bad397d8ba#:~:text=5-Step%20Guide%20to%20generate%203D%20meshes%20from%20point,the%20pcd%20point%20cloud.%20...%20More%20items...%20
-poi = time.time()-start
-start = time.time()
+# Load data
+input_path="./"
+output_path="out/"
+if not os.path.exists(output_path):
+    os.mkdir(output_path)
 
-# vertices_3d, faces_3d, edges_3d = get_trg(point_cloud)
-# color_array,vertices_3d, faces_3d, edges_3d = get_trg_1(point_cloud)
-# tri = time.time()-start
-# create_ply(color_array, vertices_3d, faces_3d, edges_3d)
-# print(poi, tri)
+# input data filename this is the sample point cloud we obtained from online
+# dataname="sample_w_normals.xyz" 
+# point_cloud= np.loadtxt(dataname,skiprows=1)
+# point_cloud=point_cloud[0:-1:100,:]
+# np.savetxt('sample_500.xyz', point_cloud)
 
-bpa(point_cloud)
+
+#our generated sample cloud
+dataname="pc.npy" 
+point_cloud= np.load(dataname)
+print(point_cloud, len(point_cloud))
+
+run = ['ark', 'bpa', 'pr'] # include the algorithm you want to run in the list 
+run_algo(run, point_cloud)
+
 
